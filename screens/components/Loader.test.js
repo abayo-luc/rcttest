@@ -5,51 +5,55 @@
 import 'react-native';
 import React from 'react';
 import Loader from './Loader';
-import { userInformation } from "../../lib/user"
-import Adapter from 'enzyme-adapter-react-16';
-import { shallow, configure, mount } from 'enzyme';
-
-configure({adapter: new Adapter()});
-
-
-
-// Note: test renderer must be required after react-native.
 import renderer from 'react-test-renderer';
+import * as user from '../../lib/user';
 
-const createTestProps = (props) => ({
-    navigation: {
-      navigate: jest.fn()
-    },
-    ...props
-  });
+const props = {
+  navigation: {
+    navigate: jest.fn(),
+  },
+};
 
+let wrapper;
 
 describe('Component: Loader', () => {
-
- 
-  it('renders correctly', () => {
-    renderer.create(<Loader />);
+  beforeAll(() => {
+    // spay on use effect, you can even mock what it will return
+    jest.spyOn(React, 'useEffect').mockImplementation((f) => f());
+  });
+  describe('User is absent', () => {
+    beforeEach(async () => {
+      // await for component to mount, if you don't, wrapper will be created with
+      /// userInformation() function pending, and
+      // therefore navigation will not be reached
+      wrapper = await renderer.create(<Loader {...props} />);
+    });
+    afterEach(() => {
+      jest.resetAllMocks();
+    });
+    it('should match snapshot', () => {
+      // span shot testing
+      expect(wrapper).toMatchSnapshot();
+    });
+    it('redirects to config page when user is not logged in', async () => {
+      expect(props.navigation.navigate).toHaveBeenCalledWith('Login');
+    });
   });
 
-  fit('redirects to config page when user is not logged in', () => {
+  describe('User is present', () => {
+    beforeEach(async () => {
+      user.userInformation = jest
+        .fn()
+        .mockReturnValue({id: 'qwerty123', name: 'luc', role: 'admin'});
+      wrapper = await renderer.create(<Loader {...props} />);
+    });
 
-     var props = createTestProps({});
-     const wrapper = shallow(<Loader {...props}/>)
-    // const instance = wrapper.instance()
-     jest.mock('../lib/userInformation', () => ({
-        userInformation: jest.fn().mockImplementation(() => {
-            new Promise((resolve, reject)=>{
-                resolve(null)
-            })
-        })
-    }))
-    wrapper.update()
-   //  instance.forceUpdate() ====> says null?
-    expect(props.navigation.navigate).toHaveBeenCalledWith('Login');
-      
-      
+    afterEach(() => {
+      jest.resetAllMocks();
+    });
+
+    it('should navigate to app if user is logged in', () => {
+      expect(props.navigation.navigate).toHaveBeenCalledWith('App');
+    });
   });
-
-
-
 });

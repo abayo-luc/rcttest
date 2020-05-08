@@ -1,9 +1,9 @@
-import React, {useContext} from 'react';
-import {StatusBar, View} from 'react-native';
+import React, {useContext, useEffect} from 'react';
+import {StatusBar, View, Text} from 'react-native';
 
-import { LocalizationContext } from "../../localize"
+import {LocalizationContext} from '../../localize';
 
-import { userInformation } from "../../lib/user"
+import {userInformation} from '../../lib/user';
 
 /*
 From what I gather, this file gets loaded first somehow and
@@ -21,31 +21,22 @@ Tests wanted:
 else go to the home page (failing)
 */
 
-import {LocalizationContext} from '../lib/localization';
-
-const Loader: () => React$Node = (props) => {
+const Loader = ({navigation}) => {
   const {initializeAppLanguage} = useContext(LocalizationContext);
 
   initializeAppLanguage();
 
-  const bootstrapAsync = async () => {
-    const userInfo = await userInformation();
-    let goToLogin = true; // force user to go to the login page
-    if (userInfo != null) {
-      goToLogin = false;
-    }
-
-    props.navigation.navigate(!goToLogin ? 'App' : 'Login');
-  };
-  
-
-
-  
-  bootstrapAsync().then().catch()
+  useEffect(() => {
+    (async () => {
+      const userInfo = await userInformation();
+      navigation.navigate(userInfo ? 'App' : 'Login'); // if there is no user, navigate to login.
+    })();
+  });
 
   return (
     <View>
       <StatusBar barStyle="default" />
+      <Text>Loading...</Text>
     </View>
   );
 };
